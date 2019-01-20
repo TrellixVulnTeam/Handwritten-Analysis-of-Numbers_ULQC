@@ -20,15 +20,29 @@ import ssl
 # getting X_train, y_train , X_test, y_test
 (X_train, y_train), (X_test, y_test) = mnist.load_data()
 
+#dimensions
+img_rows, img_cols = 28, 28
+
+if K.image_data_format() == 'channels_first':
+    X_train = X_train.reshape(X_train.shape[0], 1, img_rows, img_cols)
+    X_test = X_test.reshape(X_test.shape[0], 1, img_rows, img_cols)
+    input_shape = (1, img_rows, img_cols)
+else:
+    X_train = X_train.reshape(X_train.shape[0], img_rows, img_cols, 1)
+    X_test = X_test.reshape(X_test.shape[0], img_rows, img_cols, 1)
+    input_shape = (img_rows, img_cols, 1)
+
 print("The MNIST database has a training set of %d examples." % len(X_train))
 print("The MNIST database has a test set of %d examples." % len(X_test))
 
 #visulaizing 6 images
+"""
 fig = plt.figure(figsize=(20,20))
 for i in range(6):
     ax = fig.add_subplot(1, 6, i+1, xticks=[], yticks=[])
     ax.imshow(X_train[i], cmap='gray')
     ax.set_title(str(y_train[i]))
+"""
 #plt.show()
 
 #visualize a single input
@@ -43,9 +57,10 @@ def visualize_input(img, ax):
                         verticalalignment='center',
                         color='white' if img[x][y]<thresh else 'black')
 
+"""
 fig = plt.figure(figsize = (12,12))
 ax = fig.add_subplot(111)
-visualize_input(X_train[0], ax)
+visualize_input(X_train[0], ax)"""
 #plt.show()
 
 #rescaling
@@ -66,18 +81,22 @@ print(y_train[:10])
 
 # define the model
 model = Sequential()
-model.add(Flatten(input_shape=X_train.shape[1:]))
-model.add(Dense(512, activation='relu'))
-model.add(Dropout(0.2))
-model.add(Dense(512, activation='relu'))
-model.add(Dropout(0.2))
+model.add(Conv2D(32, kernel_size=(3, 3),
+                 activation='relu',
+                 input_shape=input_shape))
+model.add(Conv2D(64, (3, 3), activation='relu'))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+model.add(Dropout(0.25))
+model.add(Flatten())
+model.add(Dense(128, activation='relu'))
+model.add(Dropout(0.5))
 model.add(Dense(10, activation='softmax'))
 
 # summarize the model
 model.summary()
 
 # compiling the model
-model.compile(loss='categorical_crossentropy', optimizer='rmsprop',
+model.compile(loss='categorical_crossentropy', optimizer=keras.optimizers.Adadelta(),
               metrics=['accuracy'])
 
 # evaluating test data
